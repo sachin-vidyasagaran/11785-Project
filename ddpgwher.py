@@ -4,6 +4,8 @@ import numpy as np
 import gym
 from collections import deque
 import random
+import torch.autograd
+from torch.autograd import Variable
 
 
 class DDPGagentwithHER:
