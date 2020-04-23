@@ -1,5 +1,5 @@
 import models_goal
-import memorywgoal
+
 import numpy as np
 import gym
 from collections import deque
