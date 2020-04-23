@@ -1,13 +1,5 @@
-import torch
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-
-
-def init_weights_xavier(m):
-    if type(m) == nn.Conv2d or type(m) == nn.Linear:
-        torch.nn.init.xavier_normal_(m.weight.data)
-
 # input is given with parameters input dim, action dim, list of hidden sizes
 class Actor(nn.Module):
     def __init__(self, num_inputs, action_dim,hidden_sizes):
@@ -20,17 +12,22 @@ class Actor(nn.Module):
 
         for i in range(self.nlayers):
             if i==0:
-                linear = nn.Linear(num_inputs, hidden_sizes[i])
+                # linear = nn.Linear(num_inputs, hidden_sizes[i])
+                seq.append(nn.Linear(num_inputs, hidden_sizes[i]))
             # elif i==self.nlayers-1:
             #     linear = nn.Linear(hidden_size[i - 1], hidden_sizes[i])
             else:
-                linear = nn.Linear(hidden_size[i-1], hidden_sizes[i])
-            bn = nn.BatchNorm1d(hidden_sizes[i])
-            seq.append(linear)
-            seq.append(bn)
+                # linear = nn.Linear(hidden_size[i-1], hidden_sizes[i])
+                seq.append(nn.Linear(hidden_sizes[i-1], hidden_sizes[i]))
+#             print(*seq)
+            # bn = nn.BatchNorm1d(hidden_sizes[i])
+            # print(i)
+            # seq.append(bn)
             seq.append(nn.ReLU())
-        self.seq=nn.Sequential(seq)
-        self.outer=nn.Linear(hidden_size[self.nlayers-1], action_dim)
+#         print(*seq)
+        self.seq=nn.Sequential(*seq)
+        print(*seq)
+        self.outer=nn.Linear(hidden_sizes[self.nlayers-1], action_dim)
         self.tanh = nn.Tanh()
 
     def forward(self, inputs):
@@ -51,6 +48,7 @@ class Critic(nn.Module):
         self.hidden_sizes=hidden_sizes
         self.nlayers = len(hidden_sizes)
         self.qdim=q_dim
+        seq=[]
 
         for i in range(self.nlayers):
             if i==0:
@@ -58,14 +56,14 @@ class Critic(nn.Module):
             # elif i==self.nlayers-1:
             #     linear = nn.Linear(hidden_size[i - 1], hidden_sizes[i])
             else:
-                linear = nn.Linear(hidden_size[i-1], hidden_sizes[i])
-            bn = nn.BatchNorm1d(hidden_sizes[i])
+                linear = nn.Linear(hidden_sizes[i-1], hidden_sizes[i])
+#             bn = nn.BatchNorm1d(hidden_sizes[i])
             seq.append(linear)
-            seq.append(bn)
+#             seq.append(bn)
             seq.append(nn.ReLU())
-        self.seq=nn.Sequential(seq)
-        self.outer=nn.Linear(hidden_size[self.nlayers-1], q_dim)
-        self.relu = nn.ReLU()
+        self.seq=nn.Sequential(*seq)
+        self.outer=nn.Linear(hidden_sizes[self.nlayers-1], q_dim)
+#         self.relu = nn.ReLU()
 
 
 
@@ -76,7 +74,6 @@ class Critic(nn.Module):
         x = self.seq(x)
         # x = F.relu(x)
         x = self.outer(x)
-        x = self.relu(x)
+#         x = self.relu(x)
 
         return x
-
