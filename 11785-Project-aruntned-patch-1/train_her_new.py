@@ -77,3 +77,10 @@ if __name__ == "__main__":
 
         rewards_her_new.append(episode_reward)
         avg_rewards_her_new.append(np.mean(rewards_her_new[-10:]))
+    plt.plot(avg_rewards)
+    # plt.plot(rewards_her)
+    plt.plot(avg_rewards_her_new)
+    plt.plot()
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.show()
