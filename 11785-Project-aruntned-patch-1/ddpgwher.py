@@ -81,9 +81,13 @@ class DDPGagentwithHER:
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
     
-    def updateUsingHer(self, batch_size,episode_memory):
+    def updateUsingHer(self, batch_size,episode_memory,length):
         states, actions, rewards, next_states, _, goal = self.memory.sample(batch_size)
-        states_ep, actions_ep, rewards_ep, next_states_ep, _, goal_ep = episode_memory.sample(50)
+        if length<50:
+            bs=length
+        else:
+            bs=50
+        states_ep, actions_ep, rewards_ep, next_states_ep, _, goal_ep = episode_memory.sample(bs)
         states = torch.FloatTensor(states)
         actions = torch.FloatTensor(actions)
         rewards = torch.FloatTensor(rewards)
