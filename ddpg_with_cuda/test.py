@@ -9,7 +9,7 @@ from utils import *
 import random
 
 env = gym.make("FetchReach-v1")
-env.env.reward_type = 'dense'
+# env.env.reward_type = 'dense'
 #env = NormalizedEnv(env)
 #env = NormalizedEnv(gym.make("Reacher-v2"))
 #env = NormalizedEnv(gym.make("MountainCarContinuous-v0"))

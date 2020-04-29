@@ -66,7 +66,7 @@ class DDPGagent:
 
         states = states.to(self.device)
         actions = actions.to(self.device)
-        next_states = states.to(self.device)
+        next_states = next_states.to(self.device)
 
         # Critic loss
         Qvals = self.critic.forward(states, actions)
