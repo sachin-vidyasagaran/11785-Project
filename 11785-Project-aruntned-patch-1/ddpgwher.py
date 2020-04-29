@@ -82,7 +82,7 @@ class DDPGagentwithHER:
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
     
     def updateUsingHer(self, batch_size,episode_memory,length):
-        states, actions, rewards, next_states, _, goal = self.memory.sample(batch_size)
+        states, actions, rewards, next_states, _, goals = self.memory.sample(batch_size)
         if length<50:
             bs=length
         else:
@@ -92,7 +92,7 @@ class DDPGagentwithHER:
         actions = torch.FloatTensor(actions)
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
-        goals_ep = torch.FloatTensor(goal_ep)
+        goals = torch.FloatTensor(goals)
         states_ep = torch.FloatTensor(states_ep)
         actions_ep = torch.FloatTensor(actions_ep)
         rewards_ep = torch.FloatTensor(rewards_ep)
@@ -120,7 +120,7 @@ class DDPGagentwithHER:
         Qvals = self.critic.forward(states_ep, actions_ep, goals_ep)
         next_actions = self.actor_target.forward(next_states_ep, goals_ep)
         next_Q = self.critic_target.forward(next_states_ep, next_actions.detach(), goals_ep)
-        Qprime = rewards + self.gamma * next_Q
+        Qprime = rewards_ep + self.gamma * next_Q
         critic_loss = self.critic_criterion(Qvals, Qprime)
 
         # Actor loss

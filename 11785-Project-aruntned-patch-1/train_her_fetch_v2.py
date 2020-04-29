@@ -72,14 +72,15 @@ if __name__ == "__main__":
                 preward = 5
             #                 print('r',reward)
             episode_memory.push(state, action, preward, new_state, done, a_goal)
+            agentwDDPGHER.memory.push(state, action, preward, new_state, done, a_goal)
         if len(agentwDDPGHER.memory) > batch_size:
             # temp_buffer = []
             for step in range(50):
                 agentwDDPGHER.updateUsingHer(batch_size, episode_memory, length)
         temp_buffer = []
 
-    rewards_her_new.append(episode_reward)
-    avg_rewards_her_new.append(np.mean(rewards_her_new[-10:]))
+        rewards_her_new.append(episode_reward)
+        avg_rewards_her_new.append(np.mean(rewards_her_new[-10:]))
 plt.plot(avg_rewards)
 # plt.plot(rewards_her)
 plt.plot(avg_rewards_her_new)
