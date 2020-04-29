@@ -16,10 +16,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import models_goal
 from utils import *
+from ddpgwher import *
 
 
 if __name__ == "__main__":
-    env = NormalizedEnv(gym.make("Pendulum-v0"))
+    env = gym.make('FetchReach-v1')
+    env = NormalizedEnv(env)
 
     agentwDDPGHER = DDPGagentwithHER(env, [256])
     noise = OUNoise(env.action_space)
@@ -55,33 +57,35 @@ if __name__ == "__main__":
             agentwDDPGHER.memory.push(state, action, reward, new_state, done, d_goal)
             temp_buffer.append((state, action, reward, new_state, done))
             a_goal = new_state
-            # if len(agentwDDPGHER.memory) > batch_size:
-            #     length = len(temp_buffer)
             #
             #     agentwDDPGHER.update(batch_size)
 
             state = new_state
             episode_reward += reward
+            length = len(temp_buffer)
 
             if done:
                 #             print('rdone',reward)
                 #             print('sdone',new_state)
-                for idx, (mems) in enumerate(temp_buffer):
-
-                    state, action, reward, new_state, done = mems
-                    preward = reward
-                    if idx == length - 1:
-                        #                     print('yes')
-                        preward = 5
-                    #                 print('r',reward)
-
-                    agentwDDPGHER.memory.push(state, action, preward, new_state, done, a_goal)
-                temp_buffer = []
+                # for idx, (mems) in enumerate(temp_buffer):
+                #
+                #     state, action, reward, new_state, done = mems
+                #     preward = reward
+                #     if idx == length - 1:
+                #         #                     print('yes')
+                #         preward = 5
+                #     #                 print('r',reward)
+                #
+                #     agentwDDPGHER.memory.push(state, action, preward, new_state, done, a_goal)
+                # temp_buffer = []
                 sys.stdout.write("episode: {}, reward: {}, average _reward: {} \n".format(episode,
                                                                                           np.round(episode_reward,
                                                                                                    decimals=2), np.mean(
                         rewards_her_new[-10:])))
+
                 break
+        length=len(temp_buffer)
+        print('temp_len',temp_buffer)
         for idx, (mems) in enumerate(temp_buffer):
 
             state, action, reward, new_state, done = mems
@@ -93,9 +97,10 @@ if __name__ == "__main__":
             episode_memory.push(state, action, preward, new_state, done, a_goal)
             # agentwDDPGHER.memory.push(state, action, preward, new_state, done, a_goal)
         #
-        # temp_buffer = []
-        for step in range(50):
-            agentwDDPGHER.updateUsingHer(batch_size,episode_memory)
+        if len(agentwDDPGHER.memory) > batch_size:
+            # temp_buffer = []
+            for step in range(50):
+                agentwDDPGHER.updateUsingHer(batch_size,episode_memory,length)
         temp_buffer = []
         rewards_her_new.append(episode_reward)
         avg_rewards_her_new.append(np.mean(rewards_her_new[-10:]))
