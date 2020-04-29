@@ -2,6 +2,7 @@ import numpy as np
 import gym
 from collections import deque
 import random
+import pdb
 
 # Ornstein-Ulhenbeck Process
 # Taken from #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
@@ -47,6 +48,53 @@ class NormalizedEnv(gym.ActionWrapper):
         act_b = (self.action_space.high + self.action_space.low)/ 2.
         return act_k_inv * (action - act_b)
         
+
+class Normalizer():
+    def __init__(self, dims, limit):
+        #self.total = np.zeros(dims)
+        self.counter = 0
+        self.mean = np.zeros(dims - limit)
+        self.varhelper = np.ones(dims - limit)
+        self.var = np.ones(dims - limit)
+        self.dims = dims
+        self.length = dims - limit
+
+    def normalize(self, x, batch=True):
+        batch_size = len(x)
+
+        if batch:
+            res = np.zeros((batch_size, self.length))
+            for b in range(batch_size):
+                #self.total += x
+                self.counter += 1
+
+                res[b] = (x[b][:self.length] - self.mean)/self.var
+
+                #http://datagenetics.com/blog/november22017/index.html
+                #recalculate mean
+                oldmean = self.mean.copy()
+                self.mean += (x[b][:self.length] - self.mean)/self.counter
+                #recalculate variance
+                self.varhelper += (x[b][:self.length] - oldmean)*(x[b][:self.length] - self.mean)
+                self.var = np.sqrt(self.varhelper/self.counter)
+            result = np.zeros((batch_size, self.dims))
+            for b in range(batch_size):
+                result[b] = np.hstack((res[b], x[b][self.length:]))
+        else:
+            res = np.zeros(self.length)
+            self.counter += 1
+
+            res = (x[:self.length] - self.mean) / self.var
+
+            # recalculate mean
+            oldmean = self.mean.copy()
+            self.mean += (x[:self.length] - self.mean) / self.counter
+            # recalculate variance
+            self.varhelper += (x[:self.length] - oldmean)*(x[:self.length] - self.mean)
+            self.var = np.sqrt(self.varhelper / self.counter)
+            result = np.hstack((res, x[self.length:]))
+        result = np.clip(result, -5, 5)
+        return result
 
 class Memory:
     def __init__(self, max_size):

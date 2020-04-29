@@ -9,10 +9,7 @@ from utils import *
 import random
 
 env = gym.make("FetchReach-v1")
-env.env.reward_type = 'dense'
-#env = NormalizedEnv(env)
-#env = NormalizedEnv(gym.make("Reacher-v2"))
-#env = NormalizedEnv(gym.make("MountainCarContinuous-v0"))
+#env.env.reward_type = 'dense'
 agent = DDPGagent(env)
 noise = OUNoise(env.action_space)
 batch_size = 128
@@ -36,11 +33,11 @@ for episode in range(10000):
         state = new_state
         episode_reward += reward
         if done:
-            sys.stdout.write("episode: {}, reward: {}, average _reward: {} \n".format(episode, np.round(episode_reward, decimals=2), np.mean(rewards[-10:])))
+            sys.stdout.write("episode: {}, reward: {}, average _reward: {} \n".format(episode, np.round(episode_reward, decimals=2), np.mean(rewards[-50:])))
             break
 
     rewards.append(episode_reward)
-    avg_rewards.append(np.mean(rewards[-10:]))
+    avg_rewards.append(np.mean(rewards[-50:]))
 
 plt.plot(rewards)
 plt.plot(avg_rewards)

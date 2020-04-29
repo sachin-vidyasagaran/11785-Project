@@ -10,6 +10,7 @@ class DDPGagent:
     def __init__(self, env, hidden_size=256, actor_learning_rate=1e-3, critic_learning_rate=1e-3, gamma=0.99, tau=0.05, max_memory_size=50000):
         # Params
         self.num_states = env.observation_space['observation'].shape[0] + env.observation_space['desired_goal'].shape[0]
+        self.desired = env.observation_space['desired_goal'].shape[0]
         #self.num_states = env.observation_space.shape[0]
         self.num_actions = env.action_space.shape[0]
         self.gamma = gamma
@@ -36,6 +37,7 @@ class DDPGagent:
             target_param.data.copy_(param.data)
         
         # Training
+        self.statenorm = Normalizer(self.num_states, 0)
         self.memory = Memory(max_memory_size)        
         self.critic_criterion = nn.MSELoss()
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
@@ -43,10 +45,12 @@ class DDPGagent:
     
     def get_action(self, state):
         state = np.hstack((state['observation'], state['desired_goal']))
+        state = self.statenorm.normalize(state, batch=False)
 
         state = Variable(torch.from_numpy(state).float().unsqueeze(0))
 
         state = state.to(self.device)
+        self.actor.eval()
         action = self.actor.forward(state)
         action = action.to('cpu')
         action = action.detach().numpy()[0]
@@ -56,17 +60,19 @@ class DDPGagent:
         states, actions, rewards, next_states, _ = self.memory.sample(batch_size)
         for i in range(len(states)):
             states[i] = np.hstack((states[i]['observation'], states[i]['desired_goal']))
+        states = self.statenorm.normalize(states)
         states = torch.FloatTensor(states)
         actions = torch.FloatTensor(actions)
         rewards = torch.FloatTensor(rewards)
         #print(rewards)
         for i in range(len(next_states)):
             next_states[i] = np.hstack((next_states[i]['observation'], next_states[i]['desired_goal']))
+        next_states = self.statenorm.normalize(next_states)
         next_states = torch.FloatTensor(next_states)
 
         states = states.to(self.device)
         actions = actions.to(self.device)
-        next_states = states.to(self.device)
+        next_states = next_states.to(self.device)
 
         # Critic loss
         Qvals = self.critic.forward(states, actions)
@@ -78,11 +84,13 @@ class DDPGagent:
         lowbound = -1/(1 - self.gamma)
         Qprime = torch.clamp(Qprime, lowbound, 0)
         critic_loss = self.critic_criterion(Qvals, Qprime)
-        #print("q val:", Qvals)
-        #print("target q val td:", Qprime)
+        #print('critic_loss:', critic_loss.item())
         # Actor loss
+        #curr_actions = self.actor.forward(states)
         policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean()
-        
+        #policy_loss += 1 * (curr_actions).pow(2).mean()
+        #print('policy loss:', policy_loss.item())
+
         # update networks
         self.actor_optimizer.zero_grad()
         policy_loss.backward()
