@@ -83,7 +83,7 @@ class DDPGagentwithHER:
     
     def updateUsingHer(self, batch_size,episode_memory):
         states, actions, rewards, next_states, _, goal = self.memory.sample(batch_size)
-        states_ep, actions_ep, rewards_ep, next_states_ep, _, goal_ep = episode_memory.sample(batch_size)
+        states_ep, actions_ep, rewards_ep, next_states_ep, _, goal_ep = episode_memory.sample(50)
         states = torch.FloatTensor(states)
         actions = torch.FloatTensor(actions)
         rewards = torch.FloatTensor(rewards)
