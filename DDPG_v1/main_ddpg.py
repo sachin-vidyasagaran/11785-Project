@@ -6,8 +6,11 @@ from utils import plotLearning
 env = gym.make('FetchReach-v1')
 # env = gym.make('HalfCheetah-v2')
 # env = gym.make('LunarLanderContinuous-v2')
-total_inputs = env.reset()['observation'].shape[0] # Remove 'observation' indexing for envs with no dict
+env_params = env.reset()
+obs_shape = env_params['observation'].shape[0]
+d_goal_shape =  env_params['desired_goal'].shape[0]# Remove 'observation' indexing for envs with no dict
 total_actions = act = env.action_space.sample().shape[0]
+total_inputs = obs_shape + d_goal_shape
 agent = Agent(alpha=0.000025, beta=0.00025, input_dims=[total_inputs], tau=0.001, env=env,
               batch_size=64,  layer1_size=400, layer2_size=300, n_actions=total_actions)
 
@@ -16,20 +19,22 @@ np.random.seed(0)
 
 score_history = []
 for i in range(100000):
-    obs = env.reset()
-    obs = env.reset()['observation'] # Remove 'observation' indexing for envs with no dict
+    env_params = env.reset()
+    obs = env_params['observation'] # Remove 'observation' indexing for envs with no dict
+    d_goal = env_params['desired_goal']
+    net_input = np.hstack((obs,d_goal))
     # print(obs.shape)
     done = False
     score = 0
     while not done:
-        act = agent.choose_action(obs)
+        act = agent.choose_action(net_input)
         # print(act)
         new_state, reward, done, info = env.step(act)
-        new_state = new_state['observation'] ## Remove 'observation' indexing for envs with no dict
-        agent.remember(obs, act, reward, new_state, int(done))
+        new_state = np.hstack((new_state['observation'],new_state['desired_goal'])) ## Remove 'observation' indexing for envs with no dict
+        agent.remember(net_input, act, reward, new_state, int(done))
         agent.learn()
         score += reward
-        obs = new_state
+        net_input = new_state
         #env.render()
     score_history.append(score)
 
