@@ -3,6 +3,7 @@ import gym
 from collections import deque
 import random
 import pdb
+import copy
 
 # Ornstein-Ulhenbeck Process
 # Taken from #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
@@ -18,16 +19,16 @@ class OUNoise(object):
         self.low          = action_space.low
         self.high         = action_space.high
         self.reset()
-        
+
     def reset(self):
         self.state = np.ones(self.action_dim) * self.mu
-        
+
     def evolve_state(self):
         x  = self.state
         dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(self.action_dim)
         self.state = x + dx
         return self.state
-    
+
     def get_action(self, action, t=0):
         ou_state = self.evolve_state()
         self.sigma = self.max_sigma - (self.max_sigma - self.min_sigma) * min(1.0, t / self.decay_period)
@@ -47,7 +48,7 @@ class NormalizedEnv(gym.ActionWrapper):
         act_k_inv = 2./(self.action_space.high - self.action_space.low)
         act_b = (self.action_space.high + self.action_space.low)/ 2.
         return act_k_inv * (action - act_b)
-        
+
 
 class Normalizer():
     def __init__(self, dims, limit):
@@ -100,9 +101,11 @@ class Memory:
     def __init__(self, max_size):
         self.max_size = max_size
         self.buffer = deque(maxlen=max_size)
-    
+        self.traj = []
+
     def push(self, state, action, reward, next_state, done):
         experience = (state, action, np.array([reward]), next_state, done)
+        self.traj.append(experience)
         self.buffer.append(experience)
 
     def sample(self, batch_size):
@@ -121,8 +124,50 @@ class Memory:
             reward_batch.append(reward)
             next_state_batch.append(next_state)
             done_batch.append(done)
-        
+
         return state_batch, action_batch, reward_batch, next_state_batch, done_batch
 
     def __len__(self):
         return len(self.buffer)
+
+    ''' HER Functions '''
+
+    def clear_trajectory(self):
+        self.traj = []
+
+    def HER(self, final_state, final_timestep):
+        subs_goal = final_state['achieved_goal']
+        # print("SUBS GOAL:\n",subs_goal)
+        assert(len(self.traj) == final_timestep)
+
+        for t in range(final_timestep):
+
+            # print("-"*50, "\nTimestep: ", t)
+            # print(self.traj[t])
+
+            state, action, reward, next_state, done = copy.copy(self.traj[t])  # Unpack tuple
+
+            her_state = copy.copy(state)
+            her_state['desired_goal'] = subs_goal
+
+            # print(her_state['desired_goal'])
+            # print(state['desired_goal'])
+
+            her_next_state = copy.copy(next_state)
+            her_next_state['desired_goal'] = subs_goal
+
+            her_reward = 0. if done else -1. # Sparse Rewards
+
+            # print(state['desired_goal'])
+            # print(next_state['desired_goal'])
+            hindsight_experience = (her_state, action, np.array([her_reward]), her_next_state, done)
+
+            # print("__________UPDATED:")
+            # print(hindsight_experience)
+
+            self.buffer.append(hindsight_experience)
+
+# Why is hind_ex not equal to traj[t] for the last timestep?-Ans Reward doesn't seem to update the traj (?)
+# There are instants where reward is 0 but done is False
+# Updating the next_state variable automatically changes the state variable for the next timestep. How? (Doesn't happen for reward)
+# PASS BY FUCKING REFERENCE

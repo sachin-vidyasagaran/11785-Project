@@ -35,14 +35,14 @@ class DDPGagent:
 
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(param.data)
-        
+
         # Training
         self.statenorm = Normalizer(self.num_states, 0)
-        self.memory = Memory(max_memory_size)        
+        self.memory = Memory(max_memory_size)
         self.critic_criterion = nn.MSELoss()
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_learning_rate)
-    
+
     def get_action(self, state):
         state = np.hstack((state['observation'], state['desired_goal']))
         state = self.statenorm.normalize(state, batch=False)
@@ -55,7 +55,7 @@ class DDPGagent:
         action = action.to('cpu')
         action = action.detach().numpy()[0]
         return action
-    
+
     def update(self, batch_size):
         states, actions, rewards, next_states, _ = self.memory.sample(batch_size)
         for i in range(len(states)):
@@ -97,12 +97,12 @@ class DDPGagent:
         self.actor_optimizer.step()
 
         self.critic_optimizer.zero_grad()
-        critic_loss.backward() 
+        critic_loss.backward()
         self.critic_optimizer.step()
 
-        # update target networks 
+        # update target networks
         for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
-       
+
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))

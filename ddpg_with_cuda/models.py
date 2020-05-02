@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
+import torch.nn.functional as F
 import torch.autograd
 import pdb
 from torch.autograd import Variable
@@ -35,7 +35,7 @@ class Actor(nn.Module):
         self.linear2 = nn.Linear(hidden_size, hidden_size)
         self.linear3 = nn.Linear(hidden_size, hidden_size)
         self.linear4 = nn.Linear(hidden_size, output_size)
-        
+
     def forward(self, state):
         """
         Param state is a torch tensor
