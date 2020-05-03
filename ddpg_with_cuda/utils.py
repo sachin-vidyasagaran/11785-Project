@@ -142,8 +142,8 @@ class Memory:
 
         for t in range(final_timestep):
 
-            # print("-"*50, "\nTimestep: ", t)
-            # print(self.traj[t])
+            print("-"*50, "\nTimestep: ", t)
+            print(self.traj[t])
 
             state, action, reward, next_state, done = copy.copy(self.traj[t])  # Unpack tuple
 
@@ -167,7 +167,47 @@ class Memory:
 
             self.buffer.append(hindsight_experience)
 
-# Why is hind_ex not equal to traj[t] for the last timestep?-Ans Reward doesn't seem to update the traj (?)
-# There are instants where reward is 0 but done is False
-# Updating the next_state variable automatically changes the state variable for the next timestep. How? (Doesn't happen for reward)
-# PASS BY FUCKING REFERENCE
+    def HER_future(self, final_state, final_timestep):
+
+        k = 5
+
+        # subs_goal = final_state['achieved_goal']
+        # # print("SUBS GOAL:\n",subs_goal)
+        assert(len(self.traj) == final_timestep)
+
+        for t in range(final_timestep-k):
+
+            # print("-"*50, "\nTimestep: ", t)
+            # print(self.traj[t])
+
+            t_subs = np.random.randint(low=t+1, high=final_timestep, size=k)  # Sample k timesteps corresponding to the substitute goals
+            subs_goals = [self.traj[t_sub][3]['achieved_goal'] for t_sub in t_subs]
+
+            for i in range(k):    # Iterate over the k substitute goals
+
+                t_sub = t_subs[i]
+                subs_goal = subs_goals[i]
+
+                for t_s in range(t, t_sub): # Iterate from timestep t to the timestep of each substitute goal
+
+                    state, action, reward, next_state, done = copy.copy(self.traj[t_s])  # Unpack tuple
+
+                    her_state = copy.copy(state)
+                    her_state['desired_goal'] = subs_goal
+
+                    # print(her_state['desired_goal'])
+                    # print(state['desired_goal'])
+
+                    her_next_state = copy.copy(next_state)
+                    her_next_state['desired_goal'] = subs_goal
+
+                    her_reward = 0. if t_s==t_sub-1 else -1. # Sparse Rewards
+
+                    # print(state['desired_goal'])
+                    # print(next_state['desired_goal'])
+                    hindsight_experience = (her_state, action, np.array([her_reward]), her_next_state, done)
+
+                    # print("__________UPDATED:")
+                    # print(hindsight_experience)
+
+                    self.buffer.append(hindsight_experience)
