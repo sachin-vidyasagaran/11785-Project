@@ -135,15 +135,15 @@ class Memory:
     def clear_trajectory(self):
         self.traj = []
 
-    def HER(self, final_state, final_timestep):
+    def HER(self, final_state, final_timestep, reward_function):
         subs_goal = final_state['achieved_goal']
         # print("SUBS GOAL:\n",subs_goal)
         assert(len(self.traj) == final_timestep)
 
         for t in range(final_timestep):
 
-            print("-"*50, "\nTimestep: ", t)
-            print(self.traj[t])
+            # print("-"*50, "\nTimestep: ", t)
+            # print(self.traj[t])
 
             state, action, reward, next_state, done = copy.copy(self.traj[t])  # Unpack tuple
 
@@ -156,7 +156,14 @@ class Memory:
             her_next_state = copy.copy(next_state)
             her_next_state['desired_goal'] = subs_goal
 
-            her_reward = 0. if done else -1. # Sparse Rewards
+            # TODO:
+            # When your next state's achieved goal is the substitute goal.
+            # Call the env.compute reward with the above parameters and set that as the reward
+
+            # her_reward = 0. if done else -1. # Sparse Rewards
+            her_reward = reward_function(her_next_state['achieved_goal'], subs_goal, None)
+            if her_reward == 0.:
+                print("Reward 0 at timestep:", t)
 
             # print(state['desired_goal'])
             # print(next_state['desired_goal'])
@@ -167,12 +174,11 @@ class Memory:
 
             self.buffer.append(hindsight_experience)
 
+
+
     def HER_future(self, final_state, final_timestep):
 
         k = 5
-
-        # subs_goal = final_state['achieved_goal']
-        # # print("SUBS GOAL:\n",subs_goal)
         assert(len(self.traj) == final_timestep)
 
         for t in range(final_timestep-k):

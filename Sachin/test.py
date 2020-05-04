@@ -8,7 +8,7 @@ from ddpg import DDPGagent
 from utils import *
 import random
 
-env = gym.make("FetchPush-v1")
+env = gym.make("FetchReach-v1")
 #env.env.reward_type = 'dense'  # WARNING! HER implemented currently only for sparse rewards. Dense will break it!
 agent = DDPGagent(env)
 noise = OUNoise(env.action_space)
@@ -30,6 +30,8 @@ for episode in range(10000):
         new_state, reward, done, _ = env.step(action)
         agent.memory.push(state, action, reward, new_state, done)
 
+        # print(env.compute_reward(new_state['achieved_goal'], new_state['desired_goal'], None))
+
         if len(agent.memory) > batch_size:
             agent.update(batch_size)
 
@@ -40,7 +42,8 @@ for episode in range(10000):
             # print("Last State:\n", state, done)
             # if(episode_reward == 0.):
             #     print("Step:",step)
-            agent.memory.HER_future(state, step+1)
+            # agent.memory.HER_future(state, step+1, env.compute_reward)
+            agent.memory.HER(state, step+1, env.compute_reward)
             sys.stdout.write("episode: {}, reward: {}, average _reward: {} \n".format(episode, np.round(episode_reward, decimals=2), np.mean(rewards[-50:])))
             break
 
