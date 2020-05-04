@@ -8,11 +8,11 @@ from td3 import TD3
 from utils import *
 import random
 
-env = gym.make("FetchReach-v1")
+env = gym.make("FetchPush-v1")
 # env.env.reward_type = 'dense'
 agent = TD3(env)
 noise = OUNoise(env.action_space)
-batch_size = 128
+batch_size = 16
 rewards = []
 avg_rewards = []
 
@@ -20,14 +20,16 @@ for episode in range(10000):
     state = env.reset()
     noise.reset()
     episode_reward = 0
+    episode_list = []
 
     for step in range(500):
         action = agent.get_action(state)
         action = noise.get_action(action, step)
+        
         new_state, reward, done, _ = env.step(action)
-        agent.memory.push(state, action, reward, new_state, done)
-
-        if len(agent.memory) > 500:
+        episode_list.append([state, action, reward, new_state, done])
+        
+        if len(agent.memory) > batch_size:
             agent.update(batch_size)
 
         state = new_state
@@ -37,7 +39,7 @@ for episode in range(10000):
                 "episode: {}, reward: {}, average _reward: {} \n".format(episode, np.round(episode_reward, decimals=2),
                                                                          np.mean(rewards[-50:])))
             break
-
+    agent.memory.push(episode_list)
     rewards.append(episode_reward)
     avg_rewards.append(np.mean(rewards[-50:]))
 

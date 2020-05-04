@@ -8,7 +8,7 @@ from utils import *
 
 
 class TD3(object):
-    def __init__(self, env, hidden_size=256, actor_learning_rate=1e-3, critic_learning_rate=1e-3, gamma=0.99, tau=0.05,
+    def __init__(self, env, hidden_size=256, actor_learning_rate=3e-4, critic_learning_rate=3e-4, gamma=0.99, tau=0.005,
                  max_memory_size=50000, policy_freq=2):
         self.num_states = env.observation_space['observation'].shape[0] + env.observation_space['desired_goal'].shape[0]
         self.desired = env.observation_space['desired_goal'].shape[0]
@@ -19,8 +19,8 @@ class TD3(object):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         # Networks
-        self.actor = Actor(self.num_states, hidden_size, self.num_actions)
-        self.actor_target = Actor(self.num_states, hidden_size, self.num_actions)
+        self.actor = Actor(self.num_states, self.num_actions)
+        self.actor_target = Actor(self.num_states, self.num_actions)
         self.critic = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
         self.critic_target = Critic(self.num_states + self.num_actions, hidden_size, self.num_actions)
         self.actor = self.actor.to(self.device)
@@ -61,13 +61,14 @@ class TD3(object):
 
     def update(self, batch_size):
         self.total_it += 1
-        states, actions, rewards, next_states, _ = self.memory.sample(batch_size)
+        states, actions, rewards, next_states = self.memory.sample(batch_size)
         for i in range(len(states)):
             states[i] = np.hstack((states[i]['observation'], states[i]['desired_goal']))
         states = self.statenorm.normalize(states)
         states = torch.FloatTensor(states)
         actions = torch.FloatTensor(actions)
         rewards = torch.FloatTensor(rewards)
+
         # print(rewards)
         for i in range(len(next_states)):
             next_states[i] = np.hstack((next_states[i]['observation'], next_states[i]['desired_goal']))
@@ -82,17 +83,22 @@ class TD3(object):
         Qval1, Qval2 = self.critic.forward(states, actions)
         Qval1 = Qval1.to('cpu')
         Qval2 = Qval2.to('cpu')
-
-        with torch.no_grad():
-            next_actions = self.actor_target.forward(next_states)
-            target_Q1, target_Q2 = self.critic_target.forward(next_states, next_actions.detach())
-            target_Q = torch.min(target_Q1, target_Q2)
-
-            target_Q = target_Q.to('cpu')
+        
+        action_noise = torch.as_tensor(np.random.normal(loc=0, scale=0.1, size=actions.size()), device=self.device)
+        next_actions = self.actor_target.forward(next_states)
+        
+        next_actions += action_noise
+        # TODO: clip from action low and action high
+        next_actions = torch.clamp(next_actions, -1, 1)
+        
+        target_Q1, target_Q2 = self.critic_target.forward(next_states, next_actions.detach())
+        target_Q = torch.min(target_Q1, target_Q2)
+        target_Q = target_Q.to('cpu')
 
         Qprime = rewards + self.gamma * target_Q
-        lowbound = -1 / (1 - self.gamma)
-        Qprime = torch.clamp(Qprime, lowbound, 0)
+        
+        #lowbound = -1 / (1 - self.gamma)
+        #Qprime = torch.clamp(Qprime, lowbound, 0)
         critic_loss = self.critic_criterion(Qval1, Qprime) + self.critic_criterion(Qval2, Qprime)
         # print('critic_loss:', critic_loss.item())
         # Actor loss

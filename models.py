@@ -10,13 +10,11 @@ class Critic(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(Critic, self).__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
-        self.bat1 = nn.BatchNorm1d(hidden_size)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
         self.linear3 = nn.Linear(hidden_size, hidden_size)
         self.linear4 = nn.Linear(hidden_size, 1)
 
         self.linear5 = nn.Linear(input_size, hidden_size)
-        self.bat2 = nn.BatchNorm1d(hidden_size)
         self.linear6 = nn.Linear(hidden_size, hidden_size)
         self.linear7 = nn.Linear(hidden_size, hidden_size)
         self.linear8 = nn.Linear(hidden_size, 1)
@@ -27,14 +25,12 @@ class Critic(nn.Module):
         """
         x = torch.cat([state, action], 1)
         x = F.relu(self.linear1(x))
-        # x = self.bat1(x)
         x = F.relu(self.linear2(x))
         x = F.relu(self.linear3(x))
         q1 = self.linear4(x)
 
         x = torch.cat([state, action], 1)
         x = F.relu(self.linear5(x))
-        # x = self.bat1(x)
         x = F.relu(self.linear6(x))
         x = F.relu(self.linear7(x))
         q2 = self.linear8(x)
@@ -44,7 +40,6 @@ class Critic(nn.Module):
     def Q1(self, state, action):
         x = torch.cat([state, action], 1)
         x = F.relu(self.linear1(x))
-        # x = self.bat1(x)
         x = F.relu(self.linear2(x))
         x = F.relu(self.linear3(x))
         q1 = self.linear4(x)
@@ -52,22 +47,18 @@ class Critic(nn.Module):
 
 
 class Actor(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, learning_rate=3e-4):
+    def __init__(self, input_size, output_size, learning_rate=3e-4):
         super(Actor, self).__init__()
-        self.linear1 = nn.Linear(input_size, hidden_size)
-        self.bat1 = nn.BatchNorm1d(hidden_size)
-        self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear3 = nn.Linear(hidden_size, hidden_size)
-        self.linear4 = nn.Linear(hidden_size, output_size)
+        self.linear1 = nn.Linear(input_size, 400)
+        self.linear2 = nn.Linear(400, 300)
+        self.linear3 = nn.Linear(300, output_size)
 
     def forward(self, state):
         """
         Param state is a torch tensor
         """
         x = F.relu(self.linear1(state))
-        # x = self.bat1(x)
         x = F.relu(self.linear2(x))
-        x = F.relu(self.linear3(x))
-        x = torch.tanh(self.linear4(x))
+        x = torch.tanh(self.linear3(x))
 
         return x
