@@ -100,7 +100,7 @@ class TD4(object):
 
         # lowbound = -1 / (1 - self.gamma)
         # Qprime = torch.clamp(Qprime, lowbound, 0)
-        critic_loss = self.critic_criterion(Qval1, Qprime) + self.critic_criterion(Qval2, Qprime)
+        critic_loss = self.critic_criterion(Qval1, Qprime) + self.critic_criterion(Qval2, Qprime)+self.critic_criterion(Qval3, Qprime)
         # print('critic_loss:', critic_loss.item())
         # Actor loss
         # curr_actions = self.actor.forward(states)
