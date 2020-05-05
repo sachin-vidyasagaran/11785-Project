@@ -7,8 +7,9 @@ from torch.autograd import Variable
 
 
 class Critic(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size,td4=False):
         super(Critic, self).__init__()
+        self.td4=td4
         self.linear1 = nn.Linear(input_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
         self.linear3 = nn.Linear(hidden_size, hidden_size)
@@ -19,7 +20,13 @@ class Critic(nn.Module):
         self.linear7 = nn.Linear(hidden_size, hidden_size)
         self.linear8 = nn.Linear(hidden_size, 1)
 
-    def forward(self, state, action):
+        if td4:
+            self.linear9 = nn.Linear(input_size, hidden_size)
+            self.linear10 = nn.Linear(hidden_size, hidden_size)
+            self.linear11 = nn.Linear(hidden_size, hidden_size)
+            self.linear12 = nn.Linear(hidden_size, 1)
+
+    def forward(self, state, action,):
         """
         Params state and actions are torch tensors
         """
@@ -35,7 +42,16 @@ class Critic(nn.Module):
         x = F.relu(self.linear7(x))
         q2 = self.linear8(x)
 
-        return q1, q2
+        if self.td4:
+            x = torch.cat([state, action], 1)
+            x = F.relu(self.linear9(x))
+            x = F.relu(self.linear10(x))
+            x = F.relu(self.linear11(x))
+            q3 = self.linear12(x)
+
+            return q1, q2,q3
+        else:
+            return q1,q2
 
     def Q1(self, state, action):
         x = torch.cat([state, action], 1)
