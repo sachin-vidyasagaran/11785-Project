@@ -8,7 +8,7 @@ import copy
 # Ornstein-Ulhenbeck Process
 # Taken from #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
 class OUNoise(object):
-    def __init__(self, action_space, mu=0.0, theta=0.15, max_sigma=0.3, min_sigma=0.3, decay_period=100000):
+    def __init__(self, action_space, mu=0.0, theta=0.3, max_sigma=0.3, min_sigma=0.1, decay_period=50):
         self.mu           = mu
         self.theta        = theta
         self.sigma        = max_sigma
@@ -162,8 +162,8 @@ class Memory:
 
             # her_reward = 0. if done else -1. # Sparse Rewards
             her_reward = reward_function(her_next_state['achieved_goal'], subs_goal, None)
-            if her_reward == 0.:
-                print("Reward 0 at timestep:", t)
+            # if her_reward == 0.:
+            #     print("Reward 0 at timestep:", t)
 
             # print(state['desired_goal'])
             # print(next_state['desired_goal'])
@@ -176,9 +176,9 @@ class Memory:
 
 
 
-    def HER_future(self, final_state, final_timestep):
+    def HER_future(self, final_state, final_timestep, reward_function):
 
-        k = 5
+        k = 6
         assert(len(self.traj) == final_timestep)
 
         for t in range(final_timestep-k):
@@ -207,7 +207,8 @@ class Memory:
                     her_next_state = copy.copy(next_state)
                     her_next_state['desired_goal'] = subs_goal
 
-                    her_reward = 0. if t_s==t_sub-1 else -1. # Sparse Rewards
+                    her_reward = reward_function(her_next_state['achieved_goal'], subs_goal, None)
+                    
 
                     # print(state['desired_goal'])
                     # print(next_state['desired_goal'])

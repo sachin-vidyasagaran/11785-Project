@@ -42,13 +42,15 @@ for episode in range(10000):
             # print("Last State:\n", state, done)
             # if(episode_reward == 0.):
             #     print("Step:",step)
-            # agent.memory.HER_future(state, step+1, env.compute_reward)
-            agent.memory.HER(state, step+1, env.compute_reward)
+            agent.memory.HER_future(state, step+1, env.compute_reward)
+            # agent.memory.HER(state, step+1, env.compute_reward)
             sys.stdout.write("episode: {}, reward: {}, average _reward: {} \n".format(episode, np.round(episode_reward, decimals=2), np.mean(rewards[-50:])))
             break
 
     rewards.append(episode_reward)
     avg_rewards.append(np.mean(rewards[-50:]))
+    if (episode > 500):
+        break
 
 plt.plot(rewards)
 plt.plot(avg_rewards)

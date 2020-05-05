@@ -3,7 +3,7 @@ import torch.autograd
 import torch.optim as optim
 import torch.nn as nn
 import pdb
-from models import *
+from models_td3 import *
 from utils import *
 
 
@@ -61,7 +61,7 @@ class TD3(object):
 
     def update(self, batch_size):
         self.total_it += 1
-        states, actions, rewards, next_states = self.memory.sample(batch_size)
+        states, actions, rewards, next_states, _ = self.memory.sample(batch_size)
         for i in range(len(states)):
             states[i] = np.hstack((states[i]['observation'], states[i]['desired_goal']))
         states = self.statenorm.normalize(states)
