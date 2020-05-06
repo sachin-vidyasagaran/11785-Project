@@ -4,6 +4,8 @@ from collections import deque
 import random
 import pdb
 import copy
+import os
+import torch
 
 # Ornstein-Ulhenbeck Process
 # Taken from #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
@@ -59,6 +61,7 @@ class Normalizer():
         self.var = np.ones(dims - limit)
         self.dims = dims
         self.length = dims - limit
+        self.save_loc = os.path.join('saved_models/','saved_normalizer')
 
     def normalize(self, x, batch=True):
         batch_size = len(x)
@@ -96,6 +99,9 @@ class Normalizer():
             result = np.hstack((res, x[self.length:]))
         result = np.clip(result, -5, 5)
         return result
+    
+    def save_normalizer(self):
+        torch.save([self.counter, self.mean, self.varhelper, self.var, self.dims, self.length],self.save_loc)
 
 class Memory:
     def __init__(self, max_size):

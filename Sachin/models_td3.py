@@ -4,11 +4,13 @@ import torch.nn.functional as F
 import torch.autograd
 import pdb
 from torch.autograd import Variable
-
+import os
 
 class Critic(nn.Module):
     def __init__(self, input_size, hidden_size, output_size,td4=False):
         super(Critic, self).__init__()
+        name = 'TD3' if td4==False else 'TD4'
+        self.checkpoint_file = os.path.join('saved_models/',name+'_Critic')
         self.td4=td4
         self.linear1 = nn.Linear(input_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
@@ -61,10 +63,19 @@ class Critic(nn.Module):
         q1 = self.linear4(x)
         return q1
 
+    def save_checkpoint(self):
+        print('... saving checkpoint ...')
+        torch.save(self.state_dict(), self.checkpoint_file)
+
+    def load_checkpoint(self):
+        print('... loading checkpoint ...')
+        self.load_state_dict(torch.load(self.checkpoint_file))
+
 
 class Actor(nn.Module):
     def __init__(self, input_size, output_size, learning_rate=3e-4):
         super(Actor, self).__init__()
+        self.checkpoint_file = os.path.join('saved_models/','TD_Actor')
         self.linear1 = nn.Linear(input_size, 400)
         self.linear2 = nn.Linear(400, 300)
         self.linear3 = nn.Linear(300, output_size)
@@ -78,3 +89,11 @@ class Actor(nn.Module):
         x = torch.tanh(self.linear3(x))
 
         return x
+    
+    def save_checkpoint(self):
+        print('... saving checkpoint ...')
+        torch.save(self.state_dict(), self.checkpoint_file)
+
+    def load_checkpoint(self):
+        print('... loading checkpoint ...')
+        self.load_state_dict(torch.load(self.checkpoint_file))

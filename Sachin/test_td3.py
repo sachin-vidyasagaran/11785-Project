@@ -5,12 +5,14 @@ import pandas as pd
 import pdb
 import matplotlib.pyplot as plt
 from td3 import TD3
+from td4 import TD4
 from utils import *
 import random
 
 env = gym.make("FetchReach-v1")
 #env.env.reward_type = 'dense'  # WARNING! HER implemented currently only for sparse rewards. Dense will break it!
-agent = TD3(env)
+# agent = TD3(env)
+agent = TD4(env)
 # agent = DDPGagent(env)
 noise = OUNoise(env.action_space)
 batch_size = 128
@@ -50,8 +52,10 @@ for episode in range(10000):
 
     rewards.append(episode_reward)
     avg_rewards.append(np.mean(rewards[-50:]))
-    if (episode > 500):
+    if (episode > 1500):
         break
+    if (episode%100 == 0):
+        agent.save_models()
 
 plt.plot(rewards)
 plt.plot(avg_rewards)
