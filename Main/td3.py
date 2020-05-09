@@ -96,16 +96,9 @@ class TD3(object):
         target_Q = target_Q.to('cpu')
 
         Qprime = rewards + self.gamma * target_Q
-        
-        #lowbound = -1 / (1 - self.gamma)
-        #Qprime = torch.clamp(Qprime, lowbound, 0)
+ 
         critic_loss = self.critic_criterion(Qval1, Qprime) + self.critic_criterion(Qval2, Qprime)
-        # print('critic_loss:', critic_loss.item())
-        # Actor loss
-        # curr_actions = self.actor.forward(states)
-
-        # policy_loss += 1 * (curr_actions).pow(2).mean()
-        # print('policy loss:', policy_loss.item())
+    
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
@@ -129,12 +122,12 @@ class TD3(object):
     
     def save_models(self):
         self.actor.save_checkpoint()
-        self.target_actor.save_checkpoint()
+        self.actor_target.save_checkpoint()
         self.critic.save_checkpoint()
-        self.target_critic.save_checkpoint()
+        self.critic_target.save_checkpoint()
 
     def load_models(self):
         self.actor.load_checkpoint()
-        self.target_actor.load_checkpoint()
+        self.actor_target.load_checkpoint()
         self.critic.load_checkpoint()
-        self.target_critic.load_checkpoint()
+        self.critic_target.load_checkpoint()

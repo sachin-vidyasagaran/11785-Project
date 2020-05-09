@@ -74,8 +74,6 @@ class Normalizer():
 
                 res[b] = (x[b][:self.length] - self.mean)/self.var
 
-                #http://datagenetics.com/blog/november22017/index.html
-                #recalculate mean
                 oldmean = self.mean.copy()
                 self.mean += (x[b][:self.length] - self.mean)/self.counter
                 #recalculate variance
@@ -142,55 +140,38 @@ class Memory:
         self.traj = []
 
     def HER(self, final_state, final_timestep, reward_function):
+        '''
+        Final Strategy for Hindsight Experience Replay
+        '''
         subs_goal = final_state['achieved_goal']
-        # print("SUBS GOAL:\n",subs_goal)
         assert(len(self.traj) == final_timestep)
 
         for t in range(final_timestep):
-
-            # print("-"*50, "\nTimestep: ", t)
-            # print(self.traj[t])
 
             state, action, reward, next_state, done = copy.copy(self.traj[t])  # Unpack tuple
 
             her_state = copy.copy(state)
             her_state['desired_goal'] = subs_goal
 
-            # print(her_state['desired_goal'])
-            # print(state['desired_goal'])
-
             her_next_state = copy.copy(next_state)
             her_next_state['desired_goal'] = subs_goal
 
-            # TODO:
-            # When your next state's achieved goal is the substitute goal.
-            # Call the env.compute reward with the above parameters and set that as the reward
-
-            # her_reward = 0. if done else -1. # Sparse Rewards
             her_reward = reward_function(her_next_state['achieved_goal'], subs_goal, None)
-            # if her_reward == 0.:
-            #     print("Reward 0 at timestep:", t)
-
-            # print(state['desired_goal'])
-            # print(next_state['desired_goal'])
+ 
             hindsight_experience = (her_state, action, np.array([her_reward]), her_next_state, done)
-
-            # print("__________UPDATED:")
-            # print(hindsight_experience)
 
             self.buffer.append(hindsight_experience)
 
 
-
     def HER_future(self, final_state, final_timestep, reward_function):
+        '''
+        Future Strategy for Hindsight Experience Replay
+        '''
 
         k = 6
         assert(len(self.traj) == final_timestep)
 
         for t in range(final_timestep-k):
-
-            # print("-"*50, "\nTimestep: ", t)
-            # print(self.traj[t])
 
             t_subs = np.random.randint(low=t+1, high=final_timestep, size=k)  # Sample k timesteps corresponding to the substitute goals
             subs_goals = [self.traj[t_sub][3]['achieved_goal'] for t_sub in t_subs]
@@ -207,20 +188,12 @@ class Memory:
                     her_state = copy.copy(state)
                     her_state['desired_goal'] = subs_goal
 
-                    # print(her_state['desired_goal'])
-                    # print(state['desired_goal'])
-
                     her_next_state = copy.copy(next_state)
                     her_next_state['desired_goal'] = subs_goal
 
                     her_reward = reward_function(her_next_state['achieved_goal'], subs_goal, None)
-                    
-
-                    # print(state['desired_goal'])
-                    # print(next_state['desired_goal'])
+    
                     hindsight_experience = (her_state, action, np.array([her_reward]), her_next_state, done)
 
-                    # print("__________UPDATED:")
-                    # print(hindsight_experience)
 
                     self.buffer.append(hindsight_experience)
